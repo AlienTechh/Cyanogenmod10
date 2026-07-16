@@ -5,21 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
     <title>HarmonyOS Fluid Emulator</title>
     <style>
-        /* CSS Variables & System Colors */
         :root {
             --hw-blue: #007dff;
-            --hw-bg-dark: #000000;
             --hw-panel-light: #f1f3f5;
             --hw-text-dark: #1a1a1a;
             --hw-text-muted: #8a8a8f;
             --hw-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            
-            /* Slower, linear/smooth ease transition without bouncy physics */
             --smooth-app: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.7s cubic-bezier(0.25, 1, 0.5, 1);
             --smooth-desktop: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.7s cubic-bezier(0.25, 1, 0.5, 1);
         }
 
-        /* Prevent double-tap zoom, blue highlights, and scrolling on the entire document */
         html, body {
             touch-action: none;
             -webkit-tap-highlight-color: transparent;
@@ -41,10 +36,8 @@
             user-select: none;
             -webkit-user-select: none;
             -webkit-user-drag: none;
-            -webkit-tap-highlight-color: transparent;
         }
 
-        /* Ultra-compact Premium Phone Frame */
         .phone-frame {
             width: 300px;
             height: 610px;
@@ -57,7 +50,6 @@
             border: 2.5px solid #2a2a2a;
         }
 
-        /* Phone Screen & Premium Border Bezels */
         .screen {
             width: 100%;
             height: 100%;
@@ -72,33 +64,36 @@
             perspective: 800px;
         }
 
-        /* Wallpaper Container - Zoomable Background */
         .wallpaper-container {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(150deg, #1c103a 0%, #070b19 50%, #0a2540 100%);
+            background-image: url('https://www.huaweicentral.com/wp-content/uploads/2021/06/Huawei-HarmonyOS-wallpaper-1.jpg');
+            background-size: cover;
+            background-position: center;
             z-index: 1;
             transform: scale(1);
             transition: var(--smooth-desktop);
         }
 
-        /* Desktop Container (Holds Widgets, Folders, Apps) */
         .desktop {
-            position: relative;
+            position: absolute;
+            top: 0;
+            left: 0;
             z-index: 5;
             height: 100%;
             width: 100%;
             display: flex;
             flex-direction: column;
+            justify-content: space-between;
+            padding-bottom: 40px; 
             transform: scale(1);
             opacity: 1;
             transition: var(--smooth-desktop);
         }
 
-        /* Status Bar (Pinned Top) */
         .status-bar {
             height: 32px;
             padding: 0 18px;
@@ -108,89 +103,32 @@
             font-size: 10.5px;
             font-weight: 600;
             letter-spacing: -0.1px;
-            z-index: 30;
+            width: 100%;
         }
 
-        .status-left {
-            display: flex;
-            align-items: center;
-        }
+        .status-left { display: flex; align-items: center; }
+        .status-icons { display: flex; gap: 5px; }
+        .scrollable-apps-area { flex: 1; display: flex; flex-direction: column; gap: 14px; }
 
-        .status-icons {
-            display: flex;
-            gap: 5px;
-        }
-
-        /* Service Card (Widget) */
-        .widget-area {
-            padding: 8px 14px 4px 14px;
-        }
-
-        .service-widget {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(25px);
-            -webkit-backdrop-filter: blur(25px);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: 16px;
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-
-        .widget-title {
-            font-size: 9px;
-            text-transform: uppercase;
-            opacity: 0.5;
-            letter-spacing: 0.5px;
-            font-weight: 700;
-        }
-
-        .widget-body {
-            font-size: 11.5px;
-            font-weight: 500;
-            color: rgba(255, 255, 255, 0.9);
-        }
-
-        /* App Grid Layout */
         .home-screen {
-            flex: 1;
-            padding: 8px 14px;
+            padding: 20px 14px 4px 14px;
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            grid-gap: 12px 8px;
+            grid-gap: 20px 8px;
             align-content: start;
         }
 
-        /* HarmonyOS 2x2 Large Folder */
-        .large-folder {
-            grid-column: span 2;
-            grid-row: span 2;
-            background: rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 18px;
-            padding: 8px;
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 8px;
-        }
-
-        /* App Layout Styles */
         .app-icon-wrapper {
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
             cursor: pointer;
             transition: transform 0.15s ease;
         }
 
-        .app-icon-wrapper:active {
-            transform: scale(0.92);
-        }
+        .app-icon-wrapper:active { transform: scale(0.92); }
 
-        /* HarmonyOS Signature Squircle Icon */
         .app-icon {
             width: 44px;
             height: 44px;
@@ -201,27 +139,15 @@
             box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
         }
 
-        /* App Theme Color Gradients */
         .settings-icon {
             background: linear-gradient(135deg, #abb1b6 0%, #ffffff 100%);
             box-shadow: inset 0 -1px 2px rgba(0,0,0,0.1);
         }
-
-        .settings-icon svg {
-            width: 24px;
-            height: 24px;
-            fill: #444c56;
-        }
-
+        .settings-icon svg { width: 24px; height: 24px; fill: #444c56; }
         .dummy-icon-blue { background: linear-gradient(135deg, #4480ff 0%, #1153fc 100%); }
         .dummy-icon-green { background: linear-gradient(135deg, #40c057 0%, #2f9e44 100%); }
         .dummy-icon-orange { background: linear-gradient(135deg, #ff922b 0%, #f76707 100%); }
-
-        .dummy-svg {
-            width: 20px;
-            height: 20px;
-            fill: #ffffff;
-        }
+        .dummy-svg { width: 20px; height: 20px; fill: #ffffff; }
 
         .app-label {
             font-size: 9.5px;
@@ -235,8 +161,7 @@
             text-overflow: ellipsis;
         }
 
-        /* HarmonyOS ArkUI Style App Panel */
-        .settings-panel {
+        .app-panel {
             position: absolute;
             top: 0;
             left: 0;
@@ -249,8 +174,6 @@
             padding-top: 32px;
             display: flex;
             flex-direction: column;
-            
-            /* Initial State: Scale out from the App Icon coordinate */
             opacity: 0;
             transform: translate(0, 0) scale(0.1);
             transform-origin: 0 0;
@@ -258,83 +181,40 @@
             transition: var(--smooth-app);
         }
 
-        /* UI State when Open */
-        .settings-panel.open {
+        .app-panel.open {
             opacity: 1;
             transform: translate(0px, 0px) scale(1) !important;
             pointer-events: auto;
         }
 
-        /* System Background Interaction during App open state */
-        .screen.app-active .wallpaper-container {
-            transform: scale(1.1);
-        }
+        .screen.app-active .wallpaper-container { transform: scale(1.1); }
+        .screen.app-active .desktop { transform: scale(0.94); opacity: 0; pointer-events: none; }
 
-        .screen.app-active .desktop {
-            transform: scale(0.94);
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        /* App Settings Details */
-        .settings-header {
+        .app-header {
             padding: 14px 18px;
             font-size: 18px;
             font-weight: 700;
             letter-spacing: -0.4px;
         }
 
-        .settings-list {
-            flex: 1;
-            overflow-y: auto;
-            padding: 0 10px;
-        }
+        .app-content { flex: 1; overflow-y: auto; padding: 0 10px; }
+        .content-group { background-color: #ffffff; border-radius: 12px; margin-bottom: 10px; overflow: hidden; border: 1px solid rgba(0, 0, 0, 0.02); }
+        .content-item { padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f2f2f5; font-size: 12.5px; font-weight: 500; }
+        .content-item:last-child { border-bottom: none; }
+        .content-value { color: var(--hw-text-muted); font-size: 11px; }
 
-        .settings-group {
-            background-color: #ffffff;
-            border-radius: 12px;
-            margin-bottom: 10px;
-            overflow: hidden;
-            border: 1px solid rgba(0, 0, 0, 0.02);
-        }
-
-        .settings-item {
-            padding: 10px 14px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid #f2f2f5;
-            font-size: 12.5px;
-            font-weight: 500;
-        }
-
-        .settings-item:last-child {
-            border-bottom: none;
-        }
-
-        .settings-value {
-            color: var(--hw-text-muted);
-            font-size: 11px;
-        }
-
-        /* Gesture Engine Control Strip (Navigation Bar) */
         .navigation-bar {
             position: absolute;
             bottom: 0;
             left: 0;
             width: 100%;
-            height: 32px; /* Taller touch surface for easy mobile swiping */
+            height: 36px;
             display: flex;
             justify-content: center;
             align-items: center;
             z-index: 40;
-            /* CRITICAL: Disables native scroll/zoom behavior on this handle */
             touch-action: none;
-            cursor: grab;
-        }
-
-        .navigation-bar:active {
-            cursor: grabbing;
+            cursor: pointer;
         }
 
         .gesture-line {
@@ -343,13 +223,10 @@
             border-radius: 2px;
             background-color: rgba(255, 255, 255, 0.6);
             transition: background-color 0.3s;
-            pointer-events: none; /* Let touches pass through directly to the container */
+            pointer-events: none;
         }
 
-        /* Darken swipe line when settings window is active */
-        .settings-panel.open ~ .navigation-bar .gesture-line {
-            background-color: rgba(0, 0, 0, 0.35);
-        }
+        .app-panel.open ~ .navigation-bar .gesture-line { background-color: rgba(0, 0, 0, 0.35); }
     </style>
 </head>
 <body>
@@ -360,119 +237,66 @@
             <div class="wallpaper-container"></div>
 
             <div class="desktop" id="desktopContainer">
-                
-                <div class="status-bar">
-                    <div class="status-left">
-                        <span id="clock">10:08</span>
+                <div class="scrollable-apps-area">
+                    <div class="status-bar">
+                        <div class="status-left"><span id="clock">10:08</span></div>
+                        <div class="status-icons"><span>📶 5G</span><span>🔋 95%</span></div>
                     </div>
-                    <div class="status-icons">
-                        <span>📶 5G</span>
-                        <span>🔋 95%</span>
-                    </div>
-                </div>
 
-                <div class="widget-area">
-                    <div class="service-widget">
-                        <div class="widget-title">HarmonyOS Next</div>
-                        <div class="widget-body">Mobile-Optimized Swipes</div>
-                    </div>
-                </div>
-
-                <div class="home-screen">
-                    
-                    <div class="large-folder">
-                        
-                        <div class="app-icon-wrapper" id="settingsAppIcon" onclick="openSettings(this)">
+                    <div class="home-screen">
+                        <div class="app-icon-wrapper" data-app-name="Settings" onclick="openApplication(this)">
                             <div class="app-icon settings-icon">
-                                <svg viewBox="0 0 24 24">
-                                    <path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3-1.57-3-3.5s1.07-3.5 3-3.5 3 1.57 3 3.5-1.07 3.5-3 3.5z"/>
-                                </svg>
+                                <svg viewBox="0 0 24 24"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3-1.57-3-3.5s1.07-3.5 3-3.5 3 1.57 3 3.5-1.07 3.5-3 3.5z"/></svg>
                             </div>
                             <span class="app-label">Settings</span>
                         </div>
 
-                        <div class="app-icon-wrapper">
-                            <div class="app-icon dummy-icon-blue">
-                                <svg class="dummy-svg" viewBox="0 0 24 24">
-                                    <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
-                                </svg>
-                            </div>
+                        <div class="app-icon-wrapper" data-app-name="Gallery" onclick="openApplication(this)">
+                            <div class="app-icon dummy-icon-blue"><svg class="dummy-svg" viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg></div>
                             <span class="app-label">Gallery</span>
                         </div>
 
-                        <div class="app-icon-wrapper">
-                            <div class="app-icon dummy-icon-orange">
-                                <svg class="dummy-svg" viewBox="0 0 24 24">
-                                    <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
-                                </svg>
-                            </div>
+                        <div class="app-icon-wrapper" data-app-name="Music" onclick="openApplication(this)">
+                            <div class="app-icon dummy-icon-orange"><svg class="dummy-svg" viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg></div>
                             <span class="app-label">Music</span>
                         </div>
 
-                        <div class="app-icon-wrapper">
-                            <div class="app-icon dummy-icon-green">
-                                <svg class="dummy-svg" viewBox="0 0 24 24">
-                                    <path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/>
-                                </svg>
-                            </div>
+                        <div class="app-icon-wrapper" data-app-name="Market" onclick="openApplication(this)">
+                            <div class="app-icon dummy-icon-green"><svg class="dummy-svg" viewBox="0 0 24 24"><path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.1 0 2-.89 2-2V8c0-1.11-.89-2-2-2zM6 0h-4V4h4v2z"/></svg></div>
                             <span class="app-label">Market</span>
                         </div>
 
-                    </div>
-
-                    <div class="app-icon-wrapper">
-                        <div class="app-icon dummy-icon-blue">
-                            <svg class="dummy-svg" viewBox="0 0 24 24">
-                                <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-5 14H4v-4h11v4zm0-5H4V9h11v4zm5 5h-4V9h4v9z"/>
-                            </svg>
+                        <div class="app-icon-wrapper" data-app-name="Browser" onclick="openApplication(this)">
+                            <div class="app-icon dummy-icon-blue"><svg class="dummy-svg" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-5 14H4v-4h11v4zm0-5H4V9h11v4zm5 5h-4V9h4v9z"/></svg></div>
+                            <span class="app-label">Browser</span>
                         </div>
-                        <span class="app-label">Browser</span>
-                    </div>
 
-                    <div class="app-icon-wrapper">
-                        <div class="app-icon dummy-icon-green">
-                            <svg class="dummy-svg" viewBox="0 0 24 24">
-                                <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/>
-                            </svg>
+                        <div class="app-icon-wrapper" data-app-name="Phone" onclick="openApplication(this)">
+                            <div class="app-icon dummy-icon-green"><svg class="dummy-svg" viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg></div>
+                            <span class="app-label">Phone</span>
                         </div>
-                        <span class="app-label">Messages</span>
-                    </div>
 
+                        <div class="app-icon-wrapper" data-app-name="Messages" onclick="openApplication(this)">
+                            <div class="app-icon dummy-icon-blue"><svg class="dummy-svg" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg></div>
+                            <span class="app-label">Messages</span>
+                        </div>
+
+                        <div class="app-icon-wrapper" data-app-name="Camera" onclick="openApplication(this)">
+                            <div class="app-icon dummy-icon-orange"><svg class="dummy-svg" viewBox="0 0 24 24"><path d="M12 12m-3.2 0a3.2 3.2 0 1 0 6.4 0a3.2 3.2 0 1 0 -6.4 0M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9z"/></svg></div>
+                            <span class="app-label">Camera</span>
+                        </div>
+
+                        <div class="app-icon-wrapper" data-app-name="Files" onclick="openApplication(this)">
+                            <div class="app-icon dummy-icon-green"><svg class="dummy-svg" viewBox="0 0 24 24"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg></div>
+                            <span class="app-label">Files</span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="settings-panel" id="settingsPanel">
-                <div class="settings-header">Settings</div>
-                <div class="settings-list">
-                    <div class="settings-group">
-                        <div class="settings-item">
-                            <span>HUAWEI ID</span>
-                            <span class="settings-value">Harmony User &gt;</span>
-                        </div>
-                    </div>
-
-                    <div class="settings-group">
-                        <div class="settings-item">
-                            <span>Super Device</span>
-                            <span class="settings-value">Connected &gt;</span>
-                        </div>
-                        <div class="settings-item">
-                            <span>Wi-Fi</span>
-                            <span class="settings-value">Strong Signal &gt;</span>
-                        </div>
-                    </div>
-
-                    <div class="settings-group">
-                        <div class="settings-item">
-                            <span>Display & Brightness</span>
-                            <span class="settings-value">&gt;</span>
-                        </div>
-                        <div class="settings-item">
-                            <span>System & Updates</span>
-                            <span class="settings-value">Next Version &gt;</span>
-                        </div>
-                    </div>
-                </div>
+            <div class="app-panel" id="globalAppPanel">
+                <div class="app-header" id="globalAppTitle">Application</div>
+                <div class="app-content" id="globalAppContent"></div>
             </div>
 
             <div class="navigation-bar" id="navBar">
@@ -483,7 +307,6 @@
     </div>
 
     <script>
-        // Set real-time clock values
         function updateClock() {
             const now = new Date();
             let hours = now.getHours();
@@ -496,101 +319,97 @@
         updateClock();
 
         const phoneScreen = document.getElementById('phoneScreen');
-        const settingsPanel = document.getElementById('settingsPanel');
+        const globalAppPanel = document.getElementById('globalAppPanel');
+        const globalAppTitle = document.getElementById('globalAppTitle');
+        const globalAppContent = document.getElementById('globalAppContent');
         const navBar = document.getElementById('navBar');
-        const settingsAppIcon = document.getElementById('settingsAppIcon');
+        
+        let lastOpenedIconElement = null;
 
-        function openSettings(element) {
+        const appDatabaseContent = {
+            "Settings": `<div class="content-group"><div class="content-item"><span>Wi-Fi Network</span><span class="content-value">Connected &gt;</span></div><div class="content-item"><span>Bluetooth Mode</span><span class="content-value">Searching &gt;</span></div></div><div class="content-group"><div class="content-item"><span>System Version</span><span class="content-value">HarmonyOS Next v5.0</span></div></div>`,
+            "Gallery": `<div class="content-group"><div class="content-item"><span>Camera Roll</span><span class="content-value">1,248 Items &gt;</span></div><div class="content-item"><span>Cloud Albums</span><span class="content-value">Synced Today &gt;</span></div></div>`,
+            "Music": `<div class="content-group"><div class="content-item"><span>Current Track</span><span class="content-value">Now Playing Beats &gt;</span></div><div class="content-item"><span>Audio Stream Quality</span><span class="content-value">Lossless High-Fi &gt;</span></div></div>`,
+            "Market": `<div class="content-group"><div class="content-item"><span>Updates Available</span><span class="content-value">3 Pending &gt;</span></div><div class="content-item"><span>Secured Verification</span><span class="content-value">Protected &gt;</span></div></div>`,
+            "Browser": `<div class="content-group"><div class="content-item"><span>Homepage URL</span><span class="content-value">Huawei Core Live &gt;</span></div><div class="content-item"><span>Privacy Sandboxing</span><span class="content-value">Enabled &gt;</span></div></div>`,
+            "Phone": `<div class="content-group"><div class="content-item"><span>Recent Calls</span><span class="content-value">Empty Log &gt;</span></div><div class="content-item"><span>Voicemail Inbox</span><span class="content-value">0 New Messages &gt;</span></div></div>`,
+            "Messages": `<div class="content-group"><div class="content-item"><span>Direct Conversations</span><span class="content-value">No unread threads &gt;</span></div></div>`,
+            "Camera": `<div class="content-group"><div class="content-item"><span>Resolution</span><span class="content-value">50MP Ultra-HD &gt;</span></div><div class="content-item"><span>Video Mode Capture</span><span class="content-value">4K 60FPS &gt;</span></div></div>`,
+            "Files": `<div class="content-group"><div class="content-item"><span>Internal Disk</span><span class="content-value">128GB / 512GB Free &gt;</span></div><div class="content-item"><span>Downloads Cache</span><span class="content-value">Cleaned &gt;</span></div></div>`
+        };
+
+        function openApplication(element) {
+            lastOpenedIconElement = element;
+            const appName = element.getAttribute('data-app-name');
+            globalAppTitle.textContent = appName;
+            
+            globalAppContent.innerHTML = appDatabaseContent[appName] || `<div class="content-group"><div class="content-item"><span>Application Status</span><span class="content-value">Default Mode Live &gt;</span></div></div>`;
+
             const screenRect = phoneScreen.getBoundingClientRect();
             const iconRect = element.getBoundingClientRect();
 
-            // Coordinate calculations for precise origin scaling
             const originX = (iconRect.left + iconRect.width / 2) - screenRect.left;
             const originY = (iconRect.top + iconRect.height / 2) - screenRect.top;
 
-            settingsPanel.style.transformOrigin = `${originX}px ${originY}px`;
-            settingsPanel.style.transform = `translate(0px, 0px) scale(${iconRect.width / screenRect.width})`;
+            globalAppPanel.style.transformOrigin = `${originX}px ${originY}px`;
+            globalAppPanel.style.transform = `translate(0px, 0px) scale(${iconRect.width / screenRect.width})`;
 
-            void settingsPanel.offsetWidth; // Force Reflow
+            void globalAppPanel.offsetWidth; 
 
             phoneScreen.classList.add('app-active');
-            settingsPanel.classList.add('open');
+            globalAppPanel.classList.add('open');
         }
 
-        /* FIXED GESTURE SYSTEM FOR MOBILE WEBKIT (TOUCH EVENTS):
-           We listen to touch events directly and use preventDefault() to override 
-           all default safari/chrome scrolling/pan behaviors.
-        */
-        let startY = 0;
-        let isSwiping = false;
+        function closeActiveApplication() {
+            if (!lastOpenedIconElement) return;
 
-        // Touch start logic
-        navBar.addEventListener('touchstart', (e) => {
-            if (settingsPanel.classList.contains('open')) {
-                // Prevent browser defaults (scrolling, zooming, elastical rebounds)
-                if (e.cancelable) e.preventDefault();
-                startY = e.touches[0].clientY;
-                isSwiping = true;
-            }
-        }, { passive: false });
-
-        // Touch drag logic
-        navBar.addEventListener('touchmove', (e) => {
-            if (!isSwiping) return;
-            if (e.cancelable) e.preventDefault();
-
-            let currentY = e.touches[0].clientY;
-            let diffY = startY - currentY; // Distance of swipe UPWARD
-
-            // If swiped UP more than 30px, dismiss app
-            if (diffY > 30) {
-                closeSettings();
-                isSwiping = false; // Reset
-            }
-        }, { passive: false });
-
-        navBar.addEventListener('touchend', () => { isSwiping = false; });
-        navBar.addEventListener('touchcancel', () => { isSwiping = false; });
-
-        /* Mouse/Desktop Pointer Fallbacks */
-        navBar.addEventListener('pointerdown', (e) => {
-            if (settingsPanel.classList.contains('open') && e.pointerType !== 'touch') {
-                startY = e.clientY;
-                isSwiping = true;
-                navBar.setPointerCapture(e.pointerId);
-            }
-        });
-
-        navBar.addEventListener('pointermove', (e) => {
-            if (!isSwiping || e.pointerType === 'touch') return;
-            let currentY = e.clientY;
-            let diffY = startY - currentY;
-            if (diffY > 30) {
-                closeSettings();
-                isSwiping = false;
-            }
-        });
-
-        navBar.addEventListener('pointerup', () => { isSwiping = false; });
-
-        function closeSettings() {
             const screenRect = phoneScreen.getBoundingClientRect();
-            const iconRect = settingsAppIcon.getBoundingClientRect();
+            const iconRect = lastOpenedIconElement.getBoundingClientRect();
 
             const originX = (iconRect.left + iconRect.width / 2) - screenRect.left;
             const originY = (iconRect.top + iconRect.height / 2) - screenRect.top;
 
-            settingsPanel.style.transformOrigin = `${originX}px ${originY}px`;
-            settingsPanel.classList.remove('open');
-            settingsPanel.style.transform = `translate(0px, 0px) scale(${iconRect.width / screenRect.width})`;
+            globalAppPanel.style.transformOrigin = `${originX}px ${originY}px`;
+            globalAppPanel.classList.remove('open');
+            globalAppPanel.style.transform = `translate(0px, 0px) scale(${iconRect.width / screenRect.width})`;
             
             phoneScreen.classList.remove('app-active');
         }
 
-        // Global safeguard blocking all double taps from scaling viewport
-        document.addEventListener('dblclick', (e) => {
-            e.preventDefault();
-        }, { passive: false });
+        let startY = 0;
+        let isSwiping = false;
+
+        navBar.addEventListener('pointerdown', (e) => {
+            if (globalAppPanel.classList.contains('open')) {
+                startY = e.clientY;
+                isSwiping = true;
+                navBar.setPointerCapture(e.pointerId);
+                e.preventDefault();
+            }
+        });
+
+        navBar.addEventListener('pointermove', (e) => {
+            if (!isSwiping) return;
+            let currentY = e.clientY;
+            let diffY = startY - currentY;
+            if (diffY > 30) {
+                closeActiveApplication();
+                isSwiping = false;
+                navBar.releasePointerCapture(e.pointerId);
+            }
+        });
+
+        navBar.addEventListener('pointerup', (e) => {
+            isSwiping = false;
+            try { navBar.releasePointerCapture(e.pointerId); } catch(err) {}
+        });
+
+        navBar.addEventListener('pointercancel', (e) => {
+            isSwiping = false;
+            try { navBar.releasePointerCapture(e.pointerId); } catch(err) {}
+        });
+
+        document.addEventListener('dblclick', (e) => { e.preventDefault(); }, { passive: false });
     </script>
 </body>
 </html>
