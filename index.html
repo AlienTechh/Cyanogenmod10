@@ -12,8 +12,6 @@
             --hw-text-muted: #8a8a8f;
             --hw-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             
-            /* Removed opacity from transitions completely - purely solid transform mapping */
-            --smooth-app: transform 1.2s cubic-bezier(0.15, 1, 0.2, 1);
             --smooth-desktop: transform 1.2s cubic-bezier(0.15, 1, 0.2, 1), opacity 1s cubic-bezier(0.15, 1, 0.2, 1);
         }
 
@@ -176,19 +174,26 @@
             padding-top: 32px;
             display: flex;
             flex-direction: column;
-            
-            /* Kept completely opaque, visibility managed purely via pointer-events & scale hiding */
+            overflow: hidden; 
             opacity: 0; 
             transform: scale(0.01);
             pointer-events: none;
-            transition: var(--smooth-app);
-            will-change: transform;
+            will-change: transform, opacity;
+            /* Transitions are now managed strictly via JS for perfect open/close mismatch */
         }
 
         .app-panel.open {
-            opacity: 1 !important;
-            transform: scale(1) !important;
             pointer-events: auto;
+        }
+
+        .app-header, .app-content {
+            transition: opacity 0.15s ease-out;
+            opacity: 1;
+        }
+
+        .app-panel.hidden-content .app-header,
+        .app-panel.hidden-content .app-content {
+            opacity: 0 !important;
         }
 
         .screen.app-active .wallpaper-container { transform: scale(1.08); }
@@ -250,7 +255,7 @@
                     <div class="home-screen">
                         <div class="app-icon-wrapper" data-app-name="Settings" onpointerdown="openApplication(this)">
                             <div class="app-icon settings-icon">
-                                <svg viewBox="0 0 24 24"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3-1.57-3-3.5s1.07-3.5 3-3.5 3 1.57 3 3.5-1.07 3.5-3 3.5z"/></svg>
+                                <svg viewBox="0 0 24 24"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49-.12-.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3-1.57-3-3.5s1.07-3.5 3-3.5 3 1.57 3 3.5-1.07 3.5-3 3.5z"/></svg>
                             </div>
                             <span class="app-label">Settings</span>
                         </div>
@@ -346,25 +351,31 @@
         function freezeCurrentState() {
             const computedStyle = window.getComputedStyle(globalAppPanel);
             const matrix = computedStyle.transform;
+            const currentOpacity = computedStyle.opacity;
             
             globalAppPanel.style.transition = 'none';
             
             if (matrix && matrix !== 'none') {
                 globalAppPanel.style.transform = matrix;
             }
+            globalAppPanel.style.opacity = currentOpacity;
             void globalAppPanel.offsetHeight; 
         }
 
         function openApplication(element) {
+            globalAppPanel.classList.remove('hidden-content');
+
             if (isAppWindowTargetOpen && lastOpenedIconElement === element) {
-                // Instantly re-route back up if spammed while dropping down
                 freezeCurrentState();
                 isAppWindowTargetOpen = true;
-                globalAppPanel.style.opacity = '1';
+                
+                // Snap opacity instantly back to solid if interrupted mid-close
+                globalAppPanel.style.opacity = '1'; 
                 globalAppPanel.style.transformOrigin = globalAppPanel.dataset.lastOrigin || 'center center';
                 
                 requestAnimationFrame(() => {
-                    globalAppPanel.style.transition = '';
+                    // Only transition transform on open to keep the solid feel
+                    globalAppPanel.style.transition = 'transform 1.2s cubic-bezier(0.15, 1, 0.2, 1)';
                     globalAppPanel.classList.add('open');
                     phoneScreen.classList.add('app-active');
                 });
@@ -392,13 +403,13 @@
 
             const initialScale = iconRect.width / screenRect.width;
             
-            // Instantly make it 100% visible and opaque right from the starting coordinates
-            globalAppPanel.style.opacity = '1';
+            globalAppPanel.style.opacity = '1'; // Completely solid instantly
             globalAppPanel.style.transform = `scale(${initialScale})`;
 
             requestAnimationFrame(() => {
                 requestAnimationFrame(() => {
-                    globalAppPanel.style.transition = '';
+                    // Only animate transform on opening
+                    globalAppPanel.style.transition = 'transform 1.2s cubic-bezier(0.15, 1, 0.2, 1)';
                     phoneScreen.classList.add('app-active');
                     globalAppPanel.classList.add('open');
                     globalAppPanel.style.transform = 'scale(1)';
@@ -410,6 +421,7 @@
             if (!lastOpenedIconElement) return;
             isAppWindowTargetOpen = false;
 
+            globalAppPanel.classList.add('hidden-content');
             freezeCurrentState();
 
             const screenRect = phoneScreen.getBoundingClientRect();
@@ -425,13 +437,11 @@
             const targetScale = iconRect.width / screenRect.width;
 
             requestAnimationFrame(() => {
-                globalAppPanel.style.transition = '';
+                // FIXED: The window shrinks over 1.2s, but the opacity starts fading out early (0.2s delay) and completely vanishes by 0.7s. 
+                // This guarantees the ugly white box is gone before it ever hits the tiny icon size.
+                globalAppPanel.style.transition = 'transform 1.2s cubic-bezier(0.15, 1, 0.2, 1), opacity 0.5s ease-out 0.2s';
                 globalAppPanel.style.transform = `scale(${targetScale})`;
-                
-                // Hide panel window completely layout-wise ONLY once scale hits zero limit
-                setTimeout(() => {
-                    if(!isAppWindowTargetOpen) globalAppPanel.style.opacity = '0';
-                }, 1150);
+                globalAppPanel.style.opacity = '0';
             });
         }
 
