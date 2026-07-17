@@ -11,8 +11,9 @@
             --hw-text-dark: #1a1a1a;
             --hw-text-muted: #8a8a8f;
             --hw-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            --smooth-app: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.5s cubic-bezier(0.25, 1, 0.5, 1);
-            --smooth-desktop: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+            /* Using ease-out cubic for snappy, natural interruptible physics */
+            --smooth-app: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            --smooth-desktop: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         html, body {
@@ -124,7 +125,7 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: transform 0.15s ease;
+            transition: transform 0.1s ease;
         }
 
         .app-icon-wrapper:active { transform: scale(0.92); }
@@ -175,15 +176,16 @@
             display: flex;
             flex-direction: column;
             opacity: 0;
-            transform: translate(0, 0) scale(0.1);
-            transform-origin: 0 0;
+            transform: scale(0.1);
             pointer-events: none;
             transition: var(--smooth-app);
+            will-change: transform, opacity;
         }
 
+        /* Active classes */
         .app-panel.open {
             opacity: 1;
-            transform: translate(0px, 0px) scale(1) !important;
+            transform: scale(1) !important;
             pointer-events: auto;
         }
 
@@ -325,7 +327,7 @@
         const navBar = document.getElementById('navBar');
         
         let lastOpenedIconElement = null;
-        let isAppActive = false;
+        let isOpening = false;
 
         const appDatabaseContent = {
             "Settings": `<div class="content-group"><div class="content-item"><span>Wi-Fi Network</span><span class="content-value">Connected &gt;</span></div><div class="content-item"><span>Bluetooth Mode</span><span class="content-value">Searching &gt;</span></div></div><div class="content-group"><div class="content-item"><span>System Version</span><span class="content-value">HarmonyOS Next v5.0</span></div></div>`,
@@ -340,18 +342,20 @@
         };
 
         function openApplication(element) {
-            // Instant app switching: If an app is already open or closing, force it to clear out instantly
-            if (isAppActive && lastOpenedIconElement !== element) {
-                globalAppPanel.style.transition = 'none';
-                globalAppPanel.classList.remove('open');
-                phoneScreen.classList.remove('app-active');
-                void globalAppPanel.offsetHeight; // Force reflow
-                globalAppPanel.style.transition = '';
-            }
+            // If already opened or currently opening the SAME app, do nothing
+            if (isOpening && lastOpenedIconElement === element) return;
+
+            // Interrupt any previous animation immediately
+            globalAppPanel.style.transition = 'none';
+            globalAppPanel.classList.remove('open');
+            phoneScreen.classList.remove('app-active');
+            
+            // Force reflow to instantly register the animation state reset
+            void globalAppPanel.offsetHeight;
 
             lastOpenedIconElement = element;
-            isAppActive = true;
-            
+            isOpening = true;
+
             const appName = element.getAttribute('data-app-name');
             globalAppTitle.textContent = appName;
             globalAppContent.innerHTML = appDatabaseContent[appName] || `<div class="content-group"><div class="content-item"><span>Application Status</span><span class="content-value">Default Mode Live &gt;</span></div></div>`;
@@ -363,17 +367,21 @@
             const originY = (iconRect.top + iconRect.height / 2) - screenRect.top;
 
             globalAppPanel.style.transformOrigin = `${originX}px ${originY}px`;
-            globalAppPanel.style.transform = `translate(0px, 0px) scale(${iconRect.width / screenRect.width})`;
+            globalAppPanel.style.transform = `scale(${iconRect.width / screenRect.width})`;
 
-            void globalAppPanel.offsetWidth; 
-
-            phoneScreen.classList.add('app-active');
-            globalAppPanel.classList.add('open');
+            // Queue up transition reactivation smoothly via animation frames
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    globalAppPanel.style.transition = '';
+                    phoneScreen.classList.add('app-active');
+                    globalAppPanel.classList.add('open');
+                });
+            });
         }
 
         function closeActiveApplication() {
             if (!lastOpenedIconElement) return;
-            isAppActive = false;
+            isOpening = false;
 
             const screenRect = phoneScreen.getBoundingClientRect();
             const iconRect = lastOpenedIconElement.getBoundingClientRect();
@@ -383,7 +391,7 @@
 
             globalAppPanel.style.transformOrigin = `${originX}px ${originY}px`;
             globalAppPanel.classList.remove('open');
-            globalAppPanel.style.transform = `translate(0px, 0px) scale(${iconRect.width / screenRect.width})`;
+            globalAppPanel.style.transform = `scale(${iconRect.width / screenRect.width})`;
             
             phoneScreen.classList.remove('app-active');
         }
@@ -392,19 +400,18 @@
         let isSwiping = false;
 
         navBar.addEventListener('pointerdown', (e) => {
-            if (globalAppPanel.classList.contains('open')) {
-                startY = e.clientY;
-                isSwiping = true;
-                navBar.setPointerCapture(e.pointerId);
-                e.preventDefault();
-            }
+            // Allows home gesture swipe execution to be responsive mid-open
+            startY = e.clientY;
+            isSwiping = true;
+            navBar.setPointerCapture(e.pointerId);
+            e.preventDefault();
         });
 
         navBar.addEventListener('pointermove', (e) => {
             if (!isSwiping) return;
             let currentY = e.clientY;
             let diffY = startY - currentY;
-            if (diffY > 25) {
+            if (diffY > 20) {
                 closeActiveApplication();
                 isSwiping = false;
                 navBar.releasePointerCapture(e.pointerId);
